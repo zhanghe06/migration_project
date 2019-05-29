@@ -49,7 +49,6 @@ pip install pymssql
 pip install redis
 pip install requests
 pip install celery
-pip install grequests
 ```
 
 
@@ -122,7 +121,13 @@ sed -i "" "s/if noclasses or not table.primary_key or table.name in association_
 EAP_User | 用户 | user
 AA_Partner | 往来单位 | customer/supplier
 AA_Inventory | 存货（产品） | production
+AA_Warehouse | 仓库 | warehouse
+AA_InventoryLocation | 货位 | rack
 ST_CurrentStock | 现存量 | inventory
+SA_SaleDelivery | 销货单 | delivery
+SA_SaleDelivery_b | 销货单明细 | delivery_items
+PU_PurchaseArrival | 进货单 | purchase
+PU_PurchaseArrival_b | 进货单明细 | purchase_items
 
 
 ## T+ 密码
@@ -203,5 +208,25 @@ raise TokenExpired(description=u'Token 已过期')
 'TokenExpired': {
     'message': 'Token expired.',
     'status': 403,
+}
+```
+
+## SSH Tunnel
+
+开启隧道
+```bash
+sh ssh_tunnel/start_default.sh
+```
+这里将远程3306端口映射为本地3366端口
+
+修改配置
+```
+# 数据库 端口 3306 > 3366
+DB_MYSQL_TARGET = {
+    'host': HOST,
+    'user': 'root',
+    'passwd': '123456',
+    'port': 3366,
+    'db': 'db_target'
 }
 ```

@@ -8,13 +8,11 @@
 @time: 2019-04-25 18:16
 """
 
-
 from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
 import binascii
-
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -26,7 +24,6 @@ TOKEN_TTL = 600
 
 # requests 超时设置
 REQUESTS_TIME_OUT = (30, 30)
-
 
 # 数据库 MsSQL - 来源
 DB_MSSQL_SOURCE = {
@@ -88,7 +85,6 @@ REDIS_URL = 'redis://:%s@%s' % (REDIS['password'], REDIS['host']) \
 
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
-
 
 SUCCESS_MSG = {
     'result': True,

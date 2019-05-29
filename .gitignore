@@ -110,3 +110,6 @@ config/*
 
 env_*.sh
 !env_default.sh
+
+ssh_tunnel/*
+!ssh_tunnel/start_default.sh

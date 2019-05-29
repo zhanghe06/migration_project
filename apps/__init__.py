@@ -51,6 +51,7 @@ from apps.sources.urls.enum_items import *
 from apps.sources.urls.inventory import *
 from apps.sources.urls.user import *
 
+from apps.targets.user import urls
 from apps.targets.inventory import urls
 
 
