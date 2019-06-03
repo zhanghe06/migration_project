@@ -33,8 +33,8 @@ class TokenResource(Resource):
         """
         get
         Example:
-            curl http://0.0.0.0:5000/token
-            curl -u username:password http://0.0.0.0:5000/token
+            curl http://0.0.0.0:5000/tokens
+            curl -u username:password http://0.0.0.0:5000/tokens
             curl -H "Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=" http://0.0.0.0:5000/token
         :return:
         """

@@ -113,3 +113,7 @@ env_*.sh
 
 ssh_tunnel/*
 !ssh_tunnel/start_default.sh
+
+# logs
+logs/*
+!logs/README.md

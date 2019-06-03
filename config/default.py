@@ -83,6 +83,8 @@ REDIS = {
 REDIS_URL = 'redis://:%s@%s' % (REDIS['password'], REDIS['host']) \
     if REDIS.get('password') else 'redis://%s' % REDIS['host']
 
+REDIS_PREFIX = 'migration'
+
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 
@@ -99,6 +101,9 @@ FAILURE_MSG = {
 # Basic Auth
 BASIC_AUTH_USERNAME = 'username'
 BASIC_AUTH_PASSWORD = 'password'
+
+# Endpoint
+ENDPOINT = 'http://%s:8000' % HOST
 
 
 if __name__ == '__main__':

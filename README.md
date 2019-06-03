@@ -49,6 +49,8 @@ pip install pymssql
 pip install redis
 pip install requests
 pip install celery
+pip install schedule
+pip install future
 ```
 
 
@@ -230,3 +232,41 @@ DB_MYSQL_TARGET = {
     'db': 'db_target'
 }
 ```
+
+## DataGrip Use SSH Tunnel
+
+General
+```
+Host        127.0.0.1
+Port        3306
+User        root
+Password    123456
+```
+
+SSH
+```
+Proxy host          192.168.1.100
+Port                22
+Proxy user          root
+Auth type           Key pair(OpenSSH)
+Private key file    ~/.ssh/id_rsa
+Passphrase          123456
+```
+
+## Supervisor
+
+http://www.supervisord.org
+
+
+## GoProxy
+
+https://github.com/snail007/goproxy
+
+https://github.com/snail007/goproxy/blob/master/README_ZH.md
+
+
+## schedule
+
+https://github.com/dbader/schedule/
+
+https://schedule.readthedocs.io/
