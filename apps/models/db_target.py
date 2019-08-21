@@ -14,8 +14,44 @@ Base.to_dict = to_dict
 Base.__bind_key__ = 'db_target'
 
 
-class BankAccount(Base):
-    __tablename__ = 'bank_account'
+class AccountPayment(Base):
+    __tablename__ = 'account_payment'
+
+    id = Column(Integer, primary_key=True)
+    uid = Column(Integer, nullable=False, server_default=text("'0'"))
+    supplier_cid = Column(Integer, nullable=False, index=True, server_default=text("'0'"))
+    supplier_company_name = Column(String(100), nullable=False, server_default=text("''"))
+    note = Column(String(64), nullable=False, server_default=text("''"))
+    type_ticket = Column(Integer, nullable=False, server_default=text("'0'"))
+    type_account = Column(Integer, nullable=False, server_default=text("'0'"))
+    amount = Column(Numeric(8, 2), nullable=False, server_default=text("'0.00'"))
+    record_date = Column(Date, nullable=False)
+    status_delete = Column(Integer, nullable=False, server_default=text("'0'"))
+    delete_time = Column(DateTime)
+    create_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
+    update_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
+
+
+class AccountReceive(Base):
+    __tablename__ = 'account_receive'
+
+    id = Column(Integer, primary_key=True)
+    uid = Column(Integer, nullable=False, server_default=text("'0'"))
+    customer_cid = Column(Integer, nullable=False, index=True, server_default=text("'0'"))
+    customer_company_name = Column(String(100), nullable=False, server_default=text("''"))
+    note = Column(String(64), nullable=False, server_default=text("''"))
+    type_ticket = Column(Integer, nullable=False, server_default=text("'0'"))
+    type_account = Column(Integer, nullable=False, server_default=text("'0'"))
+    amount = Column(Numeric(8, 2), nullable=False, server_default=text("'0.00'"))
+    record_date = Column(Date, nullable=False)
+    status_delete = Column(Integer, nullable=False, server_default=text("'0'"))
+    delete_time = Column(DateTime)
+    create_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
+    update_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
+
+
+class Bank(Base):
+    __tablename__ = 'bank'
 
     id = Column(Integer, primary_key=True)
     bank_name = Column(String(100), nullable=False, server_default=text("''"))
@@ -29,10 +65,10 @@ class BankAccount(Base):
     update_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
 
-class BankAccountItems(Base):
-    __tablename__ = 'bank_account_items'
+class BankAccount(Base):
+    __tablename__ = 'bank_account'
     __table_args__ = (
-        Index('type_current', 'type_current', 'cid'),
+        Index('cid', 'cid', 'type_current'),
     )
 
     id = Column(Integer, primary_key=True)
@@ -43,7 +79,11 @@ class BankAccountItems(Base):
     note = Column(String(64), nullable=False, server_default=text("''"))
     type_account = Column(Integer, nullable=False, server_default=text("'0'"))
     amount = Column(Numeric(8, 2), nullable=False, server_default=text("'0.00'"))
+    record_date = Column(Date, nullable=False)
+    audit_uid = Column(Integer, nullable=False, server_default=text("'0'"))
+    status_audit = Column(Integer, nullable=False, server_default=text("'0'"))
     status_delete = Column(Integer, nullable=False, server_default=text("'0'"))
+    audit_time = Column(DateTime)
     delete_time = Column(DateTime)
     create_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
     update_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
@@ -101,8 +141,8 @@ class BuyerOrderItems(Base):
     update_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
 
-class CashAccount(Base):
-    __tablename__ = 'cash_account'
+class Cash(Base):
+    __tablename__ = 'cash'
 
     id = Column(Integer, primary_key=True)
     cash_name = Column(String(100), nullable=False, server_default=text("''"))
@@ -115,10 +155,10 @@ class CashAccount(Base):
     update_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
 
-class CashAccountItems(Base):
-    __tablename__ = 'cash_account_items'
+class CashAccount(Base):
+    __tablename__ = 'cash_account'
     __table_args__ = (
-        Index('type_current', 'type_current', 'cid'),
+        Index('cid', 'cid', 'type_current'),
     )
 
     id = Column(Integer, primary_key=True)
@@ -129,7 +169,11 @@ class CashAccountItems(Base):
     note = Column(String(64), nullable=False, server_default=text("''"))
     type_account = Column(Integer, nullable=False, server_default=text("'0'"))
     amount = Column(Numeric(8, 2), nullable=False, server_default=text("'0.00'"))
+    record_date = Column(Date, nullable=False)
+    audit_uid = Column(Integer, nullable=False, server_default=text("'0'"))
+    status_audit = Column(Integer, nullable=False, server_default=text("'0'"))
     status_delete = Column(Integer, nullable=False, server_default=text("'0'"))
+    audit_time = Column(DateTime)
     delete_time = Column(DateTime)
     create_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
     update_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
@@ -345,6 +389,30 @@ class EnquiryItems(Base):
     update_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
 
+class Futures(Base):
+    __tablename__ = 'futures'
+    __table_args__ = (
+        Index('production_model', 'production_model', 'production_brand'),
+    )
+
+    id = Column(Integer, primary_key=True)
+    supplier_company_name = Column(String(100), nullable=False, server_default=text("''"))
+    production_brand = Column(String(16), nullable=False, server_default=text("''"))
+    production_model = Column(String(32), nullable=False, server_default=text("''"))
+    currency = Column(String(3), nullable=False, server_default=text("'CNY'"))
+    req_date = Column(Date, nullable=False, server_default=text("'0000-00-00'"))
+    acc_date = Column(Date, nullable=False, server_default=text("'0000-00-00'"))
+    quantity = Column(Integer, nullable=False, server_default=text("'0'"))
+    unit_price = Column(Numeric(10, 2), nullable=False, server_default=text("'0.00'"))
+    sub_total = Column(Numeric(10, 2), nullable=False, server_default=text("'0.00'"))
+    note = Column(String(64), nullable=False, server_default=text("''"))
+    type_tax = Column(Integer, nullable=False, server_default=text("'1'"))
+    status_delete = Column(Integer, nullable=False, server_default=text("'0'"))
+    delete_time = Column(DateTime)
+    create_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
+    update_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
+
+
 class Inventory(Base):
     __tablename__ = 'inventory'
 
@@ -538,16 +606,6 @@ class Rack(Base):
     update_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
 
-class Role(Base):
-    __tablename__ = 'role'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(20), nullable=False, unique=True, server_default=text("''"))
-    note = Column(String(256), nullable=False, server_default=text("''"))
-    create_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
-    update_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
-
-
 class SalesOrder(Base):
     __tablename__ = 'sales_order'
 
@@ -659,14 +717,13 @@ class User(Base):
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(20, u'utf8mb4_bin'), nullable=False, server_default=text("''"))
+    name = Column(String(20, u'utf8mb4_bin'), nullable=False, unique=True, server_default=text("''"))
     salutation = Column(String(20), nullable=False, server_default=text("''"))
     mobile = Column(String(20), nullable=False, server_default=text("''"))
     tel = Column(String(20), nullable=False, server_default=text("''"))
     fax = Column(String(20), nullable=False, server_default=text("''"))
     email = Column(String(60), nullable=False, server_default=text("''"))
     role_id = Column(Integer, nullable=False, server_default=text("'0'"))
-    parent_id = Column(Integer, nullable=False, server_default=text("'0'"))
     status_delete = Column(Integer, nullable=False, server_default=text("'0'"))
     delete_time = Column(DateTime)
     create_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))

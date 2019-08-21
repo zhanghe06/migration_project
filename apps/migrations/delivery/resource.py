@@ -53,6 +53,9 @@ from apps.migrations.contrast.api import (
     add_contrast,
 )
 
+from maps.type_tax import TYPE_TAX_HAS, TYPE_TAX_NOT
+from maps.type_delivery import TYPE_DELIVERY_NORMAL
+
 
 class DeliveriesSyncResource(Resource):
     """
@@ -159,12 +162,12 @@ class DeliveriesSyncResource(Resource):
                     'customer_cid': target_customer_cid,
                     'customer_company_name': target_customer.company_name,
                     'customer_contact_id': target_customer_contact.id,
-                    'type_delivery': 0,
+                    'type_delivery': TYPE_DELIVERY_NORMAL,
                     'amount_production': delivery_item.taxAmount,
                     'amount_delivery': delivery_item.taxAmount,
                     'warehouse_id': target_warehouse_id,
                     'note': delivery_item.memo,
-                    'type_tax': 1 if delivery_item.taxAmount > delivery_item.amount else 0,
+                    'type_tax': TYPE_TAX_HAS if delivery_item.taxAmount > delivery_item.amount else TYPE_TAX_NOT,
                     'create_time': delivery_item.createdtime,
                     'update_time': delivery_item.updated,
                 }
@@ -214,7 +217,7 @@ class DeliveriesSyncResource(Resource):
                         'production_sku': target_production.production_sku,
                         'warehouse_id': target_warehouse_id,
                         'rack_id': target_rack_id,
-                        'type_tax': 1 if delivery_item.taxAmount > delivery_item.amount else 0,
+                        'type_tax': TYPE_TAX_HAS if delivery_item.taxAmount > delivery_item.amount else TYPE_TAX_NOT,
                         'quantity': sources_delivery_item.quantity,
                         'unit_price': sources_delivery_item.taxPrice,
                         'create_time': delivery_item.createdtime,

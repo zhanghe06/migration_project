@@ -53,6 +53,9 @@ from apps.migrations.contrast.api import (
     add_contrast,
 )
 
+from maps.type_tax import TYPE_TAX_HAS, TYPE_TAX_NOT
+from maps.type_purchase import TYPE_PURCHASE_NORMAL
+
 
 class PurchasesSyncResource(Resource):
     """
@@ -159,12 +162,12 @@ class PurchasesSyncResource(Resource):
                     'supplier_cid': target_supplier_cid,
                     'supplier_company_name': target_supplier.company_name,
                     'supplier_contact_id': target_supplier_contact.id,
-                    'type_purchase': 0,
+                    'type_purchase': TYPE_PURCHASE_NORMAL,
                     'amount_production': purchase_item.totalTaxAmount,
                     'amount_purchase': purchase_item.totalTaxAmount,
                     'warehouse_id': target_warehouse_id,
                     'note': purchase_item.memo,
-                    'type_tax': 1 if purchase_item.totalTaxAmount > purchase_item.totalAmount else 0,
+                    'type_tax': TYPE_TAX_HAS if purchase_item.totalTaxAmount > purchase_item.totalAmount else TYPE_TAX_NOT,
                     'create_time': purchase_item.createdtime,
                     'update_time': purchase_item.updated,
                 }
@@ -214,7 +217,7 @@ class PurchasesSyncResource(Resource):
                         'production_sku': target_production.production_sku,
                         'warehouse_id': target_warehouse_id,
                         'rack_id': target_rack_id,
-                        'type_tax': 1 if purchase_item.totalTaxAmount > purchase_item.totalAmount else 0,
+                        'type_tax': TYPE_TAX_HAS if purchase_item.totalTaxAmount > purchase_item.totalAmount else TYPE_TAX_NOT,
                         'quantity': sources_purchase_item.quantity,
                         'unit_price': sources_purchase_item.taxPrice,
                         'create_time': purchase_item.createdtime,
