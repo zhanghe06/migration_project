@@ -17,6 +17,7 @@ import binascii
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 HOST = '0.0.0.0'
+PORT = 8000
 DEBUG = True
 SECRET_KEY = 'c9a6b2eb758aab3e1899576e76d72550cb3dd6d7a4b56b66'
 
@@ -24,6 +25,7 @@ TOKEN_TTL = 600
 
 # requests 超时设置
 REQUESTS_TIME_OUT = (30, 30)
+MIGRATION_TIME_OUT = (30*60, 30*60)
 
 # 数据库 MsSQL - 来源
 DB_MSSQL_SOURCE = {
@@ -103,7 +105,7 @@ BASIC_AUTH_USERNAME = 'username'
 BASIC_AUTH_PASSWORD = 'password'
 
 # Endpoint
-ENDPOINT = 'http://%s:8000' % HOST
+ENDPOINT = 'http://%s:%s' % (HOST, PORT)
 
 
 if __name__ == '__main__':

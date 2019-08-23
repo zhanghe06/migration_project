@@ -31,7 +31,7 @@ def migration_warehouse():
     )
     auth = HTTPBearerAuth(res_token)
 
-    timeout = app.config.get('REQUESTS_TIME_OUT')
+    timeout = app.config.get('MIGRATION_TIME_OUT')
 
     res = requests.get(url, auth=auth, timeout=timeout)
 
@@ -40,4 +40,4 @@ def migration_warehouse():
 
 
 if __name__ == '__main__':
-    pass
+    migration_warehouse()

@@ -56,6 +56,8 @@ from apps.migrations.contrast.api import (
 from maps.type_tax import TYPE_TAX_HAS, TYPE_TAX_NOT
 from maps.type_delivery import TYPE_DELIVERY_NORMAL
 
+from tools.date_time import time_local_to_utc
+
 
 class DeliveriesSyncResource(Resource):
     """
@@ -168,8 +170,8 @@ class DeliveriesSyncResource(Resource):
                     'warehouse_id': target_warehouse_id,
                     'note': delivery_item.memo,
                     'type_tax': TYPE_TAX_HAS if delivery_item.taxAmount > delivery_item.amount else TYPE_TAX_NOT,
-                    'create_time': delivery_item.createdtime,
-                    'update_time': delivery_item.updated,
+                    'create_time': time_local_to_utc(delivery_item.createdtime),  # 本地时间修改为UTC时间
+                    'update_time': time_local_to_utc(delivery_item.updated),  # 本地时间修改为UTC时间
                 }
                 if target_audit_user_id:
                     delivery_data['audit_uid'] = target_audit_user_id
@@ -220,8 +222,8 @@ class DeliveriesSyncResource(Resource):
                         'type_tax': TYPE_TAX_HAS if delivery_item.taxAmount > delivery_item.amount else TYPE_TAX_NOT,
                         'quantity': sources_delivery_item.quantity,
                         'unit_price': sources_delivery_item.taxPrice,
-                        'create_time': delivery_item.createdtime,
-                        'update_time': delivery_item.updated,
+                        'create_time': time_local_to_utc(delivery_item.createdtime),  # 本地时间修改为UTC时间
+                        'update_time': time_local_to_utc(delivery_item.updated),  # 本地时间修改为UTC时间
                     }
                     target_delivery_items_id = targets_add_delivery_items(delivery_item_data)
                     # 标记关系

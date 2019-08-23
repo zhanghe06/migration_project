@@ -8,8 +8,11 @@
 @time: 2019-04-25 19:02
 """
 
-
 from apps import app
 
+host = app.config.get('HOST')
+port = app.config.get('PORT')
+debug = app.config.get('DEBUG')
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host=host, port=port, debug=debug)

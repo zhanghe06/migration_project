@@ -23,22 +23,27 @@ from tasks import (
     task_migration_inventory,
 )
 
+# 同步用户
+
 # 同步客户
 schedule.every(30).minutes.do(task_migration_customer.migration_customer)
 # 同步友商
 schedule.every(30).minutes.do(task_migration_supplier.migration_supplier)
-# 同步销货
-schedule.every(30).minutes.do(task_migration_delivery.migration_delivery)
-# 同步进货
-schedule.every(30).minutes.do(task_migration_purchase.migration_purchase)
+
 # 同步仓库
 schedule.every(30).minutes.do(task_migration_warehouse.migration_warehouse)
 # 同步仓位
 schedule.every(30).minutes.do(task_migration_rack.migration_rack)
+
 # 同步产品
 schedule.every(30).minutes.do(task_migration_production.migration_production)
 # 同步库存
 schedule.every(30).minutes.do(task_migration_inventory.migration_inventory)
+
+# 同步销货
+schedule.every(30).minutes.do(task_migration_delivery.migration_delivery)
+# 同步进货
+schedule.every(30).minutes.do(task_migration_purchase.migration_purchase)
 
 
 @catch_keyboard_interrupt

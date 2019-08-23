@@ -10,17 +10,22 @@
 from apps import app
 
 
-def func():
+def test_conf_quote():
+    """引用"""
     print(app.config['SUCCESS_MSG'])
-    SUCCESS_MSG = app.config['SUCCESS_MSG'].copy()
-    SUCCESS_MSG['message'] = '123'
+    success_msg = app.config['SUCCESS_MSG']
+    success_msg['message'] = '123'
     print(app.config['SUCCESS_MSG'])
 
 
-class Main(object):
-    def __init__(self):
-        pass
+def test_conf_copy():
+    """拷贝"""
+    print(app.config['SUCCESS_MSG'])
+    success_msg = app.config['SUCCESS_MSG'].copy()
+    success_msg['message'] = '456'
+    print(app.config['SUCCESS_MSG'])
 
 
 if __name__ == '__main__':
-    func()
+    test_conf_quote()
+    test_conf_copy()

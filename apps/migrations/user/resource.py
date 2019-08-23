@@ -56,7 +56,7 @@ class UsersSyncResource(Resource):
                 source_user_id = user_item.id
 
                 # 判断重复
-                count_dup = targets_count_user(name=user_item.name)
+                count_dup = targets_count_user(name=user_item.Code)
                 if count_dup:
                     count_duplicate += 1
                     print(user_item.name)

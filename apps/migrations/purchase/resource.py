@@ -55,6 +55,7 @@ from apps.migrations.contrast.api import (
 
 from maps.type_tax import TYPE_TAX_HAS, TYPE_TAX_NOT
 from maps.type_purchase import TYPE_PURCHASE_NORMAL
+from tools.date_time import time_local_to_utc
 
 
 class PurchasesSyncResource(Resource):
@@ -168,8 +169,8 @@ class PurchasesSyncResource(Resource):
                     'warehouse_id': target_warehouse_id,
                     'note': purchase_item.memo,
                     'type_tax': TYPE_TAX_HAS if purchase_item.totalTaxAmount > purchase_item.totalAmount else TYPE_TAX_NOT,
-                    'create_time': purchase_item.createdtime,
-                    'update_time': purchase_item.updated,
+                    'create_time': time_local_to_utc(purchase_item.createdtime),  # 本地时间修改为UTC时间
+                    'update_time': time_local_to_utc(purchase_item.updated),  # 本地时间修改为UTC时间
                 }
                 if target_audit_user_id:
                     purchase_data['audit_uid'] = target_audit_user_id
@@ -220,8 +221,8 @@ class PurchasesSyncResource(Resource):
                         'type_tax': TYPE_TAX_HAS if purchase_item.totalTaxAmount > purchase_item.totalAmount else TYPE_TAX_NOT,
                         'quantity': sources_purchase_item.quantity,
                         'unit_price': sources_purchase_item.taxPrice,
-                        'create_time': purchase_item.createdtime,
-                        'update_time': purchase_item.updated,
+                        'create_time': time_local_to_utc(purchase_item.createdtime),  # 本地时间修改为UTC时间
+                        'update_time': time_local_to_utc(purchase_item.updated),  # 本地时间修改为UTC时间
                     }
                     target_purchase_items_id = targets_add_purchase_items(purchase_item_data)
                     # 标记关系
