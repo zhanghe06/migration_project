@@ -21,7 +21,7 @@ from clients.client_redis import redis_client
 from tools.decorator import log_api_exception_with_desc
 
 
-@log_api_exception_with_desc('进货信息同步')
+# @log_api_exception_with_desc('进货信息同步')
 def migration_purchase():
     url = urljoin(app.config.get('ENDPOINT'), '/migrations/purchases/sync')
 
