@@ -15,12 +15,18 @@
 
 ## 项目演示
 python2
-```
+```bash
 virtualenv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python run_backend.py
+python run_apps.py
 ```
+
+```bash
+python tasks/task_token.py
+```
+
+[http://0.0.0.0:8000](http://0.0.0.0:8000)
 
 
 ## 迁移步骤
