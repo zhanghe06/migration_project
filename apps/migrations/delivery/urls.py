@@ -8,7 +8,6 @@
 @time: 2019-05-07 01:24
 """
 
-
 from apps.migrations import migrations_api
 from apps.migrations.delivery.resource import (
     DeliveriesSyncResource,

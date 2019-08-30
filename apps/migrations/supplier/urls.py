@@ -8,7 +8,6 @@
 @time: 2019-04-27 23:54
 """
 
-
 from apps.migrations import migrations_api
 from apps.migrations.supplier.resource import (
     SuppliersSyncResource,

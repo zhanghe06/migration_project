@@ -8,13 +8,11 @@
 @time: 2019-05-06 15:52
 """
 
-
 import datetime
 
-from libs.db_orm_pk import DbInstance
 from apps.databases.db_migration import db
 from apps.models.db_migration import Contrast
-
+from libs.db_orm_pk import DbInstance
 
 db_instance = DbInstance(db)
 
@@ -136,4 +134,3 @@ def count_contrast(*args, **kwargs):
     :return:
     """
     return db_instance.count(Contrast, *args, **kwargs)
-

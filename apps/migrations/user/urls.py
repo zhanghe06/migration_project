@@ -8,7 +8,6 @@
 @time: 2019-05-06 17:26
 """
 
-
 from apps.migrations import migrations_api
 from apps.migrations.user.resource import (
     UsersSyncResource,

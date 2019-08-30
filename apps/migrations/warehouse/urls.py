@@ -8,7 +8,6 @@
 @time: 2019-05-05 17:30
 """
 
-
 from apps.migrations import migrations_api
 from apps.migrations.warehouse.resource import (
     WarehousesSyncResource,
