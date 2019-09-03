@@ -58,7 +58,7 @@ def log_api_exception_with_desc(desc=''):
                 end_time = time.time()
                 run_time = end_time - start_time
                 msg = '%s.%s 运行时间: %0.2fS' % (func.__module__, func.__name__, run_time)
-                print(' '.join([desc, msg]))
+                print(' '.join([time.strftime('%Y-%m-%d %H:%M:%S'), desc, msg]))
 
         return wrapper
 
