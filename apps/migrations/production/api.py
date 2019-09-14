@@ -5,116 +5,102 @@
 @author: zhanghe
 @software: PyCharm
 @file: api.py
-@time: 2019-08-30 10:48
+@time: 2019-09-13 09:02
 """
 
 from __future__ import unicode_literals
 
 from datetime import datetime
 
-from apps.migrations.contrast.api import add_contrast, get_contrast_row
-from apps.sources.apis.enum_items import get_enum_items_row_by_id
-from apps.sources.apis.inventory import (
-    get_inventory_limit_rows_by_last_id as sources_get_production_limit_rows_by_last_id,
-    count_inventory as sources_count_production
-)
-from apps.targets.production.api import (
-    count_production as targets_count_production,
-    add_production as targets_add_production,
-    edit_production as targets_edit_production,
-)
+from apps.models.db_migration import Contrast as MigrationContrast
+from apps.models.db_source.aa_inventory import AAInventory as SourceProduction
+from apps.models.db_source.eap_enumitem import EapEnumItem as SourceBrand
+from apps.models.db_target import Production as TargetProduction
+from libs.migration_client import MigrationClient
+from tools.date_time import time_local_to_utc
 
 
 def sync():
-    last_pk = '00000000-0000-0000-0000-000000000000'
-    limit_num = 2000
-
-    count_add = 0
-    count_update = 0
-    count_duplicate = 0
+    production_client = MigrationClient('production', SourceProduction, TargetProduction, MigrationContrast)
+    brand_client = MigrationClient('brand', s_model=SourceBrand)
 
     while 1:
-        production_rows = sources_get_production_limit_rows_by_last_id(last_pk=last_pk, limit_num=limit_num)
-        if not production_rows:
+        s_rows = production_client.s_api.get_limit_rows_by_last_id(
+            last_pk=production_client.s_id,
+            limit_num=production_client.limit_num,
+        )
+        if not s_rows:
             break
-        for production_item in production_rows:
+        for s_data in s_rows:
+            production_client.s_data = s_data
+            production_client.s_id = production_client.s_data.id
+            production_client.latest_time = time_local_to_utc(production_client.s_data.updated)
 
-            last_pk = production_item.id
-            source_production_id = production_item.id
-            target_production_id = 0
-
-            # 获取目标产品
-            contrast_row_production = get_contrast_row(table_name='production', pk_source=source_production_id)
-            if contrast_row_production:
-                target_production_id = contrast_row_production.pk_target
-
-            # 获取品牌
+            # ----------
             production_brand = ''
-            if production_item.productInfo:
-                enum_items_info = get_enum_items_row_by_id(production_item.productInfo)
-                production_brand = enum_items_info.Name.strip() if enum_items_info else ''
+            if s_data.productInfo:
+                s_data_brand = brand_client.s_api.get_row_by_id(s_data.productInfo)
+                production_brand = s_data_brand.Name.strip().upper() if s_data_brand else ''
+            production_model = s_data.specification.strip().upper()
+            # ----------
 
-            production_model = production_item.specification.strip()
-
-            current_time = datetime.utcnow()
-            # 新建（无历史导入记录）
-            if not target_production_id:
-                # 判断重复
-                count_dup = targets_count_production(
+            production_client.m_detail()
+            # 存在历史数据
+            if production_client.m_data:
+                if production_client.latest_time <= production_client.m_data.latest_time:
+                    continue
+                # ----------
+                # 更新目标数据
+                production_client.t_id = production_client.m_data.pk_target
+                current_time = datetime.utcnow()
+                production_client.t_data = {
+                    'production_brand': production_brand,
+                    'production_model': production_model,
+                    'note': production_client.s_data.name,
+                    'cost_ref': production_client.s_data.invSCost,
+                    'cost_new': production_client.s_data.latestCost,
+                    'cost_avg': production_client.s_data.avagCost,
+                    'update_time': current_time,
+                }
+                # 删除条件
+                if production_client.s_data.disabled:
+                    production_client.t_data['status_delete'] = True
+                    production_client.t_data['delete_time'] = current_time
+                # ----------
+                production_client.t_update()
+                production_client.m_update()
+            # 没有历史数据
+            else:
+                # 目标数据去重
+                production_client.t_data = production_client.t_api.get_row(
                     production_brand=production_brand,
                     production_model=production_model,
                 )
-                if count_dup:
-                    count_duplicate += 1
-                    print('duplicate:', production_brand, production_model)
+                if production_client.t_data:
                     continue
-
-                production_data = {
+                # ----------
+                # 创建目标数据
+                current_time = datetime.utcnow()
+                production_client.t_data = {
                     'production_brand': production_brand,
-                    'production_model': production_item.specification,
-                    'note': production_item.name,
-                    'cost_ref': production_item.invSCost,
-                    'cost_new': production_item.latestCost,
-                    'cost_avg': production_item.avagCost,
+                    'production_model': production_model,
+                    'note': production_client.s_data.name,
+                    'cost_ref': production_client.s_data.invSCost,
+                    'cost_new': production_client.s_data.latestCost,
+                    'cost_avg': production_client.s_data.avagCost,
                     'create_time': current_time,
                     'update_time': current_time,
                 }
-                target_production_id = targets_add_production(production_data)
-
-                # 标记关系
-                contrast_data = {
-                    'table_name': 'production',
-                    'pk_source': source_production_id,
-                    'pk_target': target_production_id,
-                    'create_time': current_time,
-                    'update_time': current_time,
-                }
-                add_contrast(contrast_data)
-
-                count_add += 1
-
-            # 更新
-            else:
-                production_data = {
-                    'production_brand': production_brand,
-                    'production_model': production_item.specification,
-                    'note': production_item.name,
-                    'cost_ref': production_item.invSCost,
-                    'cost_new': production_item.latestCost,
-                    'cost_avg': production_item.avagCost,
-                    'create_time': current_time,
-                    'update_time': current_time,
-                }
-                targets_edit_production(target_production_id, production_data)
-
-                count_update += 1
-
+                # 删除条件
+                if production_client.s_data.disabled:
+                    production_client.t_data['status_delete'] = True
+                    production_client.t_data['delete_time'] = current_time
+                # ----------
+                production_client.t_create()
+                production_client.m_create()
     result = {
-        '来源总数': sources_count_production(),
-        '目标总数': targets_count_production(),
-        '新增数量': count_add,
-        '更新数量': count_update,
-        '过滤重复': count_duplicate,
+        '来源总数': production_client.s_api.count(),
+        '目标总数': production_client.t_api.count(),
     }
     return result
 

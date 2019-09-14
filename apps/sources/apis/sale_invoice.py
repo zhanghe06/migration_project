@@ -10,10 +10,10 @@
 
 
 from libs.db_orm_id import DbInstance
-from apps.databases.db_source import db
+from apps.databases.db_source import source_db
 from apps.models.db_source import SASaleInvoice
 
-db_instance = DbInstance(db)
+db_instance = DbInstance(source_db)
 
 
 def get_sale_invoice_row_by_id(sale_invoice_id):

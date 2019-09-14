@@ -1,9 +1,9 @@
 # coding: utf-8
 from sqlalchemy import Column, DateTime, Integer, String, text
-from apps.databases.db_migration import db
+from apps.databases.db_migration import migration_db
 
 
-Base = db.Model
+Base = migration_db.Model
 metadata = Base.metadata
 
 
@@ -21,6 +21,7 @@ class Contrast(Base):
     table_name = Column(String(32), nullable=False, server_default=text("''"))
     pk_source = Column(String(36), nullable=False, server_default=text("''"))
     pk_target = Column(Integer, nullable=False, server_default=text("'0'"))
+    latest_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
     status_delete = Column(Integer, nullable=False, server_default=text("'0'"))
     delete_time = Column(DateTime)
     create_time = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))

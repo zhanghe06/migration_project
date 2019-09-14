@@ -12,65 +12,74 @@ from __future__ import unicode_literals
 
 from datetime import datetime
 
-from apps.migrations.contrast.api import add_contrast
-from apps.sources.apis.warehouse import (
-    get_warehouse_limit_rows_by_last_id as sources_get_warehouse_limit_rows_by_last_id,
-    count_warehouse as sources_count_warehouse,
-)
-from apps.targets.warehouse.api import (
-    count_warehouse as targets_count_warehouse,
-    add_warehouse as targets_add_warehouse,
-)
+from apps.models.db_migration import Contrast as MigrationContrast
+from apps.models.db_source.aa_warehouse import AAWarehouse as SourceWarehouse
+from apps.models.db_target import Warehouse as TargetWarehouse
+from libs.migration_client import MigrationClient
+from tools.date_time import time_local_to_utc
 
 
 def sync():
-    last_pk = '00000000-0000-0000-0000-000000000000'
-    limit_num = 2000
-
-    count_duplicate = 0
+    warehouse_client = MigrationClient('warehouse', SourceWarehouse, TargetWarehouse, MigrationContrast)
 
     while 1:
-        warehouse_rows = sources_get_warehouse_limit_rows_by_last_id(last_pk=last_pk, limit_num=limit_num)
-        if not warehouse_rows:
+        s_rows = warehouse_client.s_api.get_limit_rows_by_last_id(
+            last_pk=warehouse_client.s_id,
+            limit_num=warehouse_client.limit_num,
+        )
+        if not s_rows:
             break
-        for warehouse_item in warehouse_rows:
+        for s_data in s_rows:
+            warehouse_client.s_data = s_data
+            warehouse_client.s_id = warehouse_client.s_data.id
+            warehouse_client.latest_time = time_local_to_utc(warehouse_client.s_data.updated)
 
-            last_pk = warehouse_item.id
-            source_warehouse_id = warehouse_item.id
-
-            # 判断重复
-            count_dup = targets_count_warehouse(name=warehouse_item.name)
-            if count_dup:
-                count_duplicate += 1
-                print(warehouse_item.name)
-                print(count_duplicate)
-                continue
-            current_time = datetime.utcnow()
-            warehouse_data = {
-                'name': warehouse_item.name,
-                'address': warehouse_item.address,
-                'create_time': current_time,
-                'update_time': current_time,
-            }
-            if warehouse_item.disabled:
-                warehouse_data['status_delete'] = True,
-                warehouse_data['delete_time'] = current_time,
-            target_warehouse_id = targets_add_warehouse(warehouse_data)
-
-            # 标记关系
-            contrast_data = {
-                'table_name': 'warehouse',
-                'pk_source': source_warehouse_id,
-                'pk_target': target_warehouse_id,
-                'create_time': current_time,
-                'update_time': current_time,
-            }
-            add_contrast(contrast_data)
-
+            warehouse_client.m_detail()
+            # 存在历史数据
+            if warehouse_client.m_data:
+                if warehouse_client.latest_time <= warehouse_client.m_data.latest_time:
+                    continue
+                # ----------
+                # 更新目标数据
+                warehouse_client.t_id = warehouse_client.m_data.pk_target
+                current_time = datetime.utcnow()
+                warehouse_client.t_data = {
+                    'name': warehouse_client.s_data.name,
+                    'address': warehouse_client.s_data.address,
+                    'update_time': current_time,
+                }
+                # 删除条件
+                if warehouse_client.s_data.disabled:
+                    warehouse_client.t_data['status_delete'] = True
+                    warehouse_client.t_data['delete_time'] = current_time
+                # ----------
+                warehouse_client.t_update()
+                warehouse_client.m_update()
+            # 没有历史数据
+            else:
+                # 目标数据去重
+                warehouse_client.t_data = warehouse_client.t_api.get_row(name=warehouse_client.s_data.name)
+                if warehouse_client.t_data:
+                    continue
+                # ----------
+                # 创建目标数据
+                current_time = datetime.utcnow()
+                warehouse_client.t_data = {
+                    'name': warehouse_client.s_data.name,
+                    'address': warehouse_client.s_data.address,
+                    'create_time': current_time,
+                    'update_time': current_time,
+                }
+                # 删除条件
+                if warehouse_client.s_data.disabled:
+                    warehouse_client.t_data['status_delete'] = True
+                    warehouse_client.t_data['delete_time'] = current_time
+                # ----------
+                warehouse_client.t_create()
+                warehouse_client.m_create()
     result = {
-        '总数': sources_count_warehouse(),
-        '过滤重复': count_duplicate,
-        '成功导入': targets_count_warehouse(),
+        '来源总数': warehouse_client.s_api.count(),
+        '目标总数': warehouse_client.t_api.count(),
     }
     return result
 

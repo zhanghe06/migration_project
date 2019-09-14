@@ -12,14 +12,14 @@
 import datetime
 
 from libs.db_orm_pk import DbInstance
-from apps.databases.db_target import db
+from apps.databases.db_target import target_db
 from apps.models.db_target import Supplier
 
 from apps.targets.supplier_contact.api import get_supplier_contact_rows
 from apps.targets.supplier_invoice.api import get_supplier_invoice_row_by_id
 
 
-db_instance = DbInstance(db)
+db_instance = DbInstance(target_db)
 
 
 def get_supplier_row_by_id(supplier_id):

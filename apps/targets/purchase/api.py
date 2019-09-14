@@ -12,10 +12,10 @@
 import datetime
 
 from libs.db_orm_pk import DbInstance
-from apps.databases.db_target import db
+from apps.databases.db_target import target_db
 from apps.models.db_target import Purchase
 
-db_instance = DbInstance(db)
+db_instance = DbInstance(target_db)
 
 
 def get_purchase_row_by_id(purchase_id):

@@ -12,11 +12,11 @@
 import datetime
 
 from libs.db_orm_pk import DbInstance
-from apps.databases.db_target import db
+from apps.databases.db_target import target_db
 from apps.models.db_target import Rack
 
 
-db_instance = DbInstance(db)
+db_instance = DbInstance(target_db)
 
 
 def get_rack_row_by_id(rack_id):

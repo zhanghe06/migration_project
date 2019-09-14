@@ -1,10 +1,10 @@
 # coding: utf-8
 from sqlalchemy import Column, Integer, String, TIMESTAMP, Unicode, text
 from sqlalchemy.dialects.mssql.base import UNIQUEIDENTIFIER
-from apps.databases.db_source import db
+from apps.databases.db_source import source_db
 
 
-Base = db.Model
+Base = source_db.Model
 metadata = Base.metadata
 
 

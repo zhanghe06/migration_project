@@ -12,14 +12,14 @@
 import datetime
 
 from libs.db_orm_pk import DbInstance
-from apps.databases.db_target import db
+from apps.databases.db_target import target_db
 from apps.models.db_target import Customer
 
 from apps.targets.customer_contact.api import get_customer_contact_rows
 from apps.targets.customer_invoice.api import get_customer_invoice_row_by_id
 
 
-db_instance = DbInstance(db)
+db_instance = DbInstance(target_db)
 
 
 def get_customer_row_by_id(customer_id):

@@ -1,9 +1,9 @@
 # coding: utf-8
 from sqlalchemy import Column, Date, DateTime, Index, Integer, Numeric, String, text
-from apps.databases.db_target import db
+from apps.databases.db_target import target_db
 
 
-Base = db.Model
+Base = target_db.Model
 metadata = Base.metadata
 
 

@@ -10,10 +10,10 @@
 
 
 from libs.db_orm_id import DbInstance
-from apps.databases.db_source import db
+from apps.databases.db_source import source_db
 from apps.models.db_source.eap_user import EAPUser
 
-db_instance = DbInstance(db)
+db_instance = DbInstance(source_db)
 
 
 def get_user_row_by_id(user_id):

@@ -298,3 +298,42 @@ https://github.com/snail007/goproxy/blob/master/README_ZH.md
 https://github.com/dbader/schedule/
 
 https://schedule.readthedocs.io/
+
+
+## 数据库连接最佳实践
+
+- 脚本应用
+```python
+from apps.databases.db_migration import get_migration_db
+from apps.databases.db_source import get_source_db
+from apps.databases.db_target import get_target_db
+
+from apps.models.db_migration import Contrast as MigrationContrast
+from apps.models.db_source.eap_user import EAPUser as SourceUser
+from apps.models.db_target import User as TargetUser
+
+from libs.db_orm_api import DbApi
+
+migration_contrast_api = DbApi(get_migration_db(), MigrationContrast)
+source_user_api = DbApi(get_source_db(), SourceUser)
+target_user_api = DbApi(get_target_db(), TargetUser)
+```
+单独开启连接
+
+- 网页应用
+```python
+from apps.databases.db_migration import migration_db
+from apps.databases.db_source import source_db
+from apps.databases.db_target import target_db
+
+from apps.models.db_migration import Contrast as MigrationContrast
+from apps.models.db_source.eap_user import EAPUser as SourceUser
+from apps.models.db_target import User as TargetUser
+
+from libs.db_orm_api import DbApi
+
+migration_contrast_api = DbApi(migration_db, MigrationContrast)
+source_user_api = DbApi(source_db, SourceUser)
+target_user_api = DbApi(target_db, TargetUser)
+```
+可共用连接池

@@ -110,7 +110,7 @@ class DbInstance(object):
             .filter(model_pk.in_(pk_ids)) \
             .all()
 
-    def get_limit_rows_by_last_id(self, model_class, last_pk_id, limit_num, *args, **kwargs):
+    def get_limit_rows_by_last_id(self, model_class, last_pk, limit_num, *args, **kwargs):
         """
         通过最后一个主键 id 获取最新信息列表
         避免id乱序, 需要加入order_by
@@ -118,7 +118,7 @@ class DbInstance(object):
         1、动态加载
         2、快速定位
         :param model_class:
-        :param last_pk_id:
+        :param last_pk:
         :param limit_num:
         :param args:
         :param kwargs:
@@ -127,7 +127,7 @@ class DbInstance(object):
         model_pk = inspect(model_class).primary_key[0]
         return self.db_instance.session \
             .query(model_class) \
-            .filter(model_pk > last_pk_id, *args) \
+            .filter(model_pk > last_pk, *args) \
             .filter_by(**kwargs) \
             .order_by(model_pk) \
             .limit(limit_num) \

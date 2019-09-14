@@ -21,6 +21,8 @@ fields_item_user = {
     'tel': fields.String(attribute='tel'),
     'fax': fields.String(attribute='fax'),
     'email': fields.String(attribute='email'),
+    'create_time': fields.DateTime(dt_format=b'iso8601'),
+    'update_time': fields.DateTime(dt_format=b'iso8601'),
 }
 
 fields_item_user_cn = {
@@ -31,4 +33,6 @@ fields_item_user_cn = {
     'tel': fields.String(attribute='tel'),
     'fax': fields.String(attribute='fax'),
     'email': fields.String(attribute='email'),
+    'create_time': fields.DateTime(dt_format=b'iso8601'),
+    'update_time': fields.DateTime(dt_format=b'iso8601'),
 }

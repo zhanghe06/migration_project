@@ -107,6 +107,10 @@ BASIC_AUTH_PASSWORD = 'password'
 # Endpoint
 ENDPOINT = 'http://%s:%s' % (HOST, PORT)
 
+# 数据同步配置
+SYNC_LAST_PK = '00000000-0000-0000-0000-000000000000'
+SYNC_LIMIT_NUM = 2000
+
 
 if __name__ == '__main__':
     sk = os.urandom(24)

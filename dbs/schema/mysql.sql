@@ -14,6 +14,7 @@ CREATE TABLE `contrast` (
   `table_name` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '表名',
   `pk_source` VARCHAR(36) NOT NULL DEFAULT '' COMMENT '来源主键（UUID）',
   `pk_target` INT NOT NULL DEFAULT 0 COMMENT '目标主键（整型自增）',
+  `latest_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '来源数据最新时间（用作数据更新依据）',
   `status_delete` TINYINT NOT NULL DEFAULT 0 COMMENT '删除状态（0:未删除,1:已删除）',
   `delete_time` TIMESTAMP NULL COMMENT '删除时间',
   `create_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

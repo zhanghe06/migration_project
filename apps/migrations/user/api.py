@@ -5,72 +5,82 @@
 @author: zhanghe
 @software: PyCharm
 @file: api.py
-@time: 2019-08-30 11:01
+@time: 2019-09-14 14:34
 """
+
 
 from __future__ import unicode_literals
 
 from datetime import datetime
 
-from apps.migrations.contrast.api import add_contrast
-from apps.sources.apis.user import (
-    get_user_limit_rows_by_last_id as sources_get_user_limit_rows_by_last_id,
-    count_user as sources_count_user,
-)
-from apps.targets.user.api import (
-    count_user as targets_count_user,
-    add_user as targets_add_user,
-)
+from apps.models.db_migration import Contrast as MigrationContrast
+from apps.models.db_source.eap_user import EAPUser as SourceUser
+from apps.models.db_target import User as TargetUser
+from libs.migration_client import MigrationClient
+from tools.date_time import time_local_to_utc
 
 
 def sync():
-    last_pk = '00000000-0000-0000-0000-000000000000'
-    limit_num = 2000
-
-    count_duplicate = 0
+    user_client = MigrationClient('user', SourceUser, TargetUser, MigrationContrast)
 
     while 1:
-        user_rows = sources_get_user_limit_rows_by_last_id(last_pk=last_pk, limit_num=limit_num)
-        if not user_rows:
+        s_rows = user_client.s_api.get_limit_rows_by_last_id(
+            last_pk=user_client.s_id,
+            limit_num=user_client.limit_num,
+        )
+        if not s_rows:
             break
-        for user_item in user_rows:
+        for s_data in s_rows:
+            user_client.s_data = s_data
+            user_client.s_id = user_client.s_data.id
+            user_client.latest_time = time_local_to_utc(user_client.s_data.updated)
 
-            last_pk = user_item.id
-            source_user_id = user_item.id
-
-            # 判断重复
-            count_dup = targets_count_user(name=user_item.Code)
-            if count_dup:
-                count_duplicate += 1
-                print(user_item.name)
-                print(count_duplicate)
-                continue
-            current_time = datetime.utcnow()
-            user_data = {
-                'name': user_item.Code,
-                'mobile': user_item.name,
-                'create_time': current_time,
-                'update_time': current_time,
-            }
-            if user_item.isAdmin or user_item.issystem or user_item.isStoped:
-                user_data['status_delete'] = True,
-                user_data['delete_time'] = current_time,
-            target_user_id = targets_add_user(user_data)
-
-            # 标记关系
-            contrast_data = {
-                'table_name': 'user',
-                'pk_source': source_user_id,
-                'pk_target': target_user_id,
-                'create_time': current_time,
-                'update_time': current_time,
-            }
-            add_contrast(contrast_data)
-
+            user_client.m_detail()
+            # 存在历史数据
+            if user_client.m_data:
+                if user_client.latest_time <= user_client.m_data.latest_time:
+                    continue
+                # ----------
+                # 更新目标数据
+                user_client.t_id = user_client.m_data.pk_target
+                current_time = datetime.utcnow()
+                user_client.t_data = {
+                    'name': user_client.s_data.Code,
+                    'mobile': user_client.s_data.name,
+                    'update_time': current_time,
+                }
+                # 删除条件
+                if user_client.s_data.issystem or user_client.s_data.isStoped:
+                    user_client.t_data['status_delete'] = True
+                    user_client.t_data['delete_time'] = current_time
+                # ----------
+                user_client.t_update()
+                user_client.m_update()
+            # 没有历史数据
+            else:
+                # 目标数据去重
+                user_client.t_data = user_client.t_api.get_row(name=user_client.s_data.Code)
+                if user_client.t_data:
+                    continue
+                # ----------
+                # 创建目标数据
+                current_time = datetime.utcnow()
+                user_client.t_data = {
+                    'name': user_client.s_data.Code,
+                    'mobile': user_client.s_data.name,
+                    'create_time': current_time,
+                    'update_time': current_time,
+                }
+                # 删除条件
+                if user_client.s_data.issystem or user_client.s_data.isStoped:
+                    user_client.t_data['status_delete'] = True
+                    user_client.t_data['delete_time'] = current_time
+                # ----------
+                user_client.t_create()
+                user_client.m_create()
     result = {
-        '总数': sources_count_user(),
-        '过滤重复': count_duplicate,
-        '成功导入': targets_count_user(),
+        '来源总数': user_client.s_api.count(),
+        '目标总数': user_client.t_api.count(),
     }
     return result
 

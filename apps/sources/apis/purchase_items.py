@@ -10,10 +10,10 @@
 
 
 from libs.db_orm_id import DbInstance
-from apps.databases.db_source import db
+from apps.databases.db_source import source_db
 from apps.models.db_source.pu_purchasearrival_b import PUPurchaseArrivalB
 
-db_instance = DbInstance(db)
+db_instance = DbInstance(source_db)
 
 
 def get_purchase_items_row_by_id(purchase_items_id):

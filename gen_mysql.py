@@ -21,8 +21,8 @@ def gen_models(app_name, db_key):
     :param db_key:
     :return:
     """
-    file_path = os.path.join(BASE_DIR, app_name, 'models', '%s.py' % db_key)
-    cmd = 'sqlacodegen %s --noinflect --outfile %s' % (SQLALCHEMY_BINDS[db_key], file_path)
+    file_path = os.path.join(BASE_DIR, app_name, 'models', 'db_%s.py' % db_key)
+    cmd = 'sqlacodegen %s --noinflect --outfile %s' % (SQLALCHEMY_BINDS['db_%s' % db_key], file_path)
     print(cmd)
 
     output = os.popen(cmd)
@@ -33,8 +33,8 @@ def gen_models(app_name, db_key):
     with open(file_path, b'r') as f:
         lines = f.readlines()
     # 替换 model 关键内容
-    lines[2] = b'from %s.databases.%s import db\n' % (app_name, db_key)
-    lines[5] = b'Base = db.Model\n'
+    lines[2] = b'from %s.databases.db_%s import %s_db\n' % (app_name, db_key, db_key)
+    lines[5] = b'Base = %s_db.Model\n' % db_key
 
     # 新增 model 转 dict 方法
     with open(file_path, b'w') as f:
@@ -42,7 +42,7 @@ def gen_models(app_name, db_key):
         lines.insert(10, b'    return {c.name: getattr(self, c.name, None) for c in self.__table__.columns}\n')
         lines.insert(11, b'\n')
         lines.insert(12, b'Base.to_dict = to_dict\n')
-        lines.insert(13, b'Base.__bind_key__ = \'%s\'\n' % db_key)
+        lines.insert(13, b'Base.__bind_key__ = \'db_%s\'\n' % db_key)
         lines.insert(14, b'\n\n')
         f.write(b''.join(lines))
 
@@ -51,8 +51,8 @@ def usage():
     print('''
 创建/更新 models
 $ python gen_mysql.py [项目名称] [数据库键]
-$ python gen_mysql.py apps db_target
-$ python gen_mysql.py apps db_migration
+$ python gen_mysql.py apps target
+$ python gen_mysql.py apps migration
 ''')
 
 

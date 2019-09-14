@@ -10,10 +10,10 @@
 
 
 from libs.db_orm_id import DbInstance
-from apps.databases.db_source import db
+from apps.databases.db_source import source_db
 from apps.models.db_source.st_currentstock import STCurrentStock
 
-db_instance = DbInstance(db)
+db_instance = DbInstance(source_db)
 
 
 def get_current_stock_row_by_id(current_stock_id):
