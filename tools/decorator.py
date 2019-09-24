@@ -11,6 +11,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import json
 import time
 from functools import wraps
 
@@ -51,6 +52,8 @@ def log_api_exception_with_desc(desc=''):
             start_time = time.time()
             try:
                 func_res = func(*args, **kwargs)
+                if isinstance(func_res, dict):
+                    print(json.dumps(func_res, indent=4, ensure_ascii=False))
                 return func_res
             except Exception as e:
                 print(e.message)

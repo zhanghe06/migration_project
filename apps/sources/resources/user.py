@@ -43,8 +43,8 @@ class UsersResource(Resource):
     def get(self):
         """
         Example:
-            curl http://0.0.0.0:5000/source/users
-            curl http://0.0.0.0:5000/source/users?page=1&per_page=20
+            curl http://0.0.0.0:5000/sources/users
+            curl http://0.0.0.0:5000/sources/users?page=1&per_page=20
         :return:
         """
         # 条件参数
