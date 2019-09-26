@@ -37,6 +37,8 @@ def sync():
             warehouse_client.m_detail()
             # 存在历史数据
             if warehouse_client.m_data:
+                if not warehouse_client.s_data.updated:
+                    continue
                 if warehouse_client.latest_time <= warehouse_client.m_data.latest_time:
                     continue
                 # ----------

@@ -47,6 +47,8 @@ def sync():
             production_client.m_detail()
             # 存在历史数据
             if production_client.m_data:
+                if not production_client.s_data.updated:
+                    continue
                 if production_client.latest_time <= production_client.m_data.latest_time:
                     continue
                 # ----------

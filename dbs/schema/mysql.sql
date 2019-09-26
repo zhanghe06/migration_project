@@ -19,6 +19,10 @@ CREATE TABLE `contrast` (
   `delete_time` TIMESTAMP NULL COMMENT '删除时间',
   `create_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY (`pk_source`),
+  KEY (`pk_target`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='关系对照表';
 
+# ALTER TABLE `contrast` ADD KEY (`pk_source`);
+# ALTER TABLE `contrast` ADD KEY (`pk_target`);

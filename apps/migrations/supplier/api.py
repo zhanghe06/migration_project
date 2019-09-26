@@ -62,6 +62,8 @@ def sync():
             supplier_client.m_detail()
             # 存在历史数据
             if supplier_client.m_data:
+                if not supplier_client.s_data.updated:
+                    continue
                 if supplier_client.latest_time <= supplier_client.m_data.latest_time:
                     continue
                 # ----------

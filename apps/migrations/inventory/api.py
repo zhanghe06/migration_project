@@ -74,6 +74,8 @@ def sync():
             inventory_client.m_detail()
             # 存在历史数据
             if inventory_client.m_data:
+                if not inventory_client.s_data.updated:
+                    continue
                 if inventory_client.latest_time <= inventory_client.m_data.latest_time:
                     continue
                 # ----------

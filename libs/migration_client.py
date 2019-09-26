@@ -48,6 +48,8 @@ class MigrationClient(object):
             table_name=self.table_name,
             pk_source=self.s_id,
         )
+        if self.m_data:
+            self.m_id = self.m_data.id
 
     def m_create(self):
         current_time = datetime.utcnow()
@@ -68,7 +70,7 @@ class MigrationClient(object):
             'pk_source': self.s_id,
             'pk_target': self.t_id,
             'latest_time': self.latest_time,
-            'create_time': current_time,
+            # 'create_time': current_time,
             'update_time': current_time,
         }
         self.m_api.edit(self.m_id, m_data)

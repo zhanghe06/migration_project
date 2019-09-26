@@ -90,6 +90,8 @@ def sync():
             delivery_client.m_detail()
             # 存在历史数据
             if delivery_client.m_data:
+                if not delivery_client.s_data.updated:
+                    continue
                 if delivery_client.latest_time <= delivery_client.m_data.latest_time:
                     continue
                 # ----------

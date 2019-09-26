@@ -90,6 +90,8 @@ def sync():
             purchase_client.m_detail()
             # 存在历史数据
             if purchase_client.m_data:
+                if not purchase_client.s_data.updated:
+                    continue
                 if purchase_client.latest_time <= purchase_client.m_data.latest_time:
                     continue
                 # ----------

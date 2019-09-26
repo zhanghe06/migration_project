@@ -38,6 +38,8 @@ def sync():
             user_client.m_detail()
             # 存在历史数据
             if user_client.m_data:
+                if not user_client.s_data.updated:
+                    continue
                 if user_client.latest_time <= user_client.m_data.latest_time:
                     continue
                 # ----------

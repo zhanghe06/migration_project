@@ -46,6 +46,8 @@ def sync():
             rack_client.m_detail()
             # 存在历史数据
             if rack_client.m_data:
+                if not rack_client.s_data.updated:
+                    continue
                 if rack_client.latest_time <= rack_client.m_data.latest_time:
                     continue
                 # ----------
