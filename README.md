@@ -57,6 +57,7 @@ pip install requests
 pip install celery
 pip install schedule
 pip install future
+pip install supervisor
 ```
 
 
@@ -337,3 +338,8 @@ source_user_api = DbApi(source_db, SourceUser)
 target_user_api = DbApi(target_db, TargetUser)
 ```
 可共用连接池
+
+
+## 项目核心
+
+文件`libs/migration_client.py`中的类：[`MigrationClient`](libs/migration_client.py)

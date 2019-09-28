@@ -17,7 +17,7 @@ from tools.decorator import log_api_exception_with_desc
 
 @log_api_exception_with_desc('销货信息同步')
 def migration_delivery():
-    sync()
+    return sync()
 
 
 if __name__ == '__main__':
