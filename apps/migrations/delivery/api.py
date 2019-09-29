@@ -10,9 +10,8 @@
 
 from __future__ import unicode_literals
 
-from datetime import datetime
-
 from apps.models.db_migration import Contrast as MigrationContrast
+from apps.models.db_source.aa_inventory import AAInventory as SourceProduction
 from apps.models.db_source.eap_user import EAPUser as SourceUser
 from apps.models.db_source.sa_saledelivery import SASaleDelivery as SourceDelivery
 from apps.models.db_source.sa_saledelivery_b import SASaleDeliveryB as SourceDeliveryItems
@@ -35,11 +34,12 @@ def sync():
     delivery_items_client = MigrationClient('delivery_items', SourceDeliveryItems, TargetDeliveryItems,
                                             MigrationContrast)
     user_client = MigrationClient('user', SourceUser, TargetUser, MigrationContrast)
+    auditor_client = MigrationClient('user', None, None, MigrationContrast)
     customer_client = MigrationClient('customer', None, TargetCustomer, MigrationContrast)
     customer_contact_client = MigrationClient('customer_contact', None, TargetCustomerContact, MigrationContrast)
     warehouse_client = MigrationClient('warehouse', None, TargetWarehouse, MigrationContrast)
     rack_client = MigrationClient('rack', None, TargetRack, MigrationContrast)
-    production_client = MigrationClient('production', None, TargetProduction, MigrationContrast)
+    production_client = MigrationClient('production', SourceProduction, TargetProduction, MigrationContrast)
 
     while 1:
         s_rows = delivery_client.s_api.get_limit_rows_by_last_id(
@@ -61,6 +61,13 @@ def sync():
             )
             if not user_client.m_data:
                 continue
+
+            # 审核人员
+            auditor_client.m_data = user_client.m_api.get_row(
+                table_name='user',
+                pk_source=delivery_client.s_data.auditorid,
+            )
+            auditor_client.t_id = auditor_client.m_data.pk_target if auditor_client.m_data else 0
 
             # 客户信息
             customer_client.m_data = customer_client.m_api.get_row(
@@ -97,7 +104,9 @@ def sync():
                 # ----------
                 # 更新目标数据
                 delivery_client.t_id = delivery_client.m_data.pk_target
-                current_time = datetime.utcnow()
+                create_time = time_local_to_utc(delivery_client.s_data.createdtime)
+                update_time = time_local_to_utc(delivery_client.s_data.updated)
+                type_tax = TYPE_TAX_HAS if delivery_client.s_data.taxAmount > delivery_client.s_data.amount else TYPE_TAX_NOT
                 delivery_client.t_data = {
                     'uid': user_client.m_data.pk_target,
                     'customer_cid': customer_client.t_data.id,
@@ -108,20 +117,27 @@ def sync():
                     'amount_delivery': delivery_client.s_data.taxAmount,
                     'warehouse_id': warehouse_client.m_data.pk_target,
                     'note': delivery_client.s_data.memo,
-                    'type_tax': TYPE_TAX_HAS if delivery_client.s_data.taxAmount > delivery_client.s_data.amount else TYPE_TAX_NOT,
-                    'update_time': time_local_to_utc(delivery_client.s_data.updated),  # 本地时间修改为UTC时间
+                    'type_tax': type_tax,
+                    'update_time': update_time,  # 本地时间修改为UTC时间
                 }
                 # 删除条件
                 # if delivery_client.s_data.disabled:
                 #     delivery_client.t_data['status_delete'] = True
                 #     delivery_client.t_data['delete_time'] = current_time
+                # 审核条件
+                if auditor_client.t_id:
+                    delivery_client.t_data['status_audit'] = True
+                    delivery_client.t_data['audit_uid'] = auditor_client.t_id
+                    delivery_client.t_data['audit_time'] = update_time
                 # ----------
                 delivery_client.t_update()
                 delivery_client.m_update()
 
                 # 明细数据
                 # 清空历史
-                delivery_items_history_rows = delivery_items_client.t_api.get_rows()
+                delivery_items_history_rows = delivery_items_client.t_api.get_rows(
+                    delivery_id=delivery_client.t_id,
+                )
                 for delivery_items_history_data in delivery_items_history_rows:
                     delivery_items_client.t_api.delete(delivery_items_history_data.id)
                 # 全部更新
@@ -140,10 +156,13 @@ def sync():
                     production_client.t_data = production_client.t_api.get_row_by_id(production_client.m_data.pk_target)
                     if not production_client.t_data:
                         continue
-                    # 仓位
+                    production_client.s_data = production_client.s_api.get_row_by_id(production_client.m_data.pk_source)
+                    if not production_client.s_data:
+                        continue
+                    # 仓位（产品编号 > 产品详情 > 产品仓位）
                     rack_client.m_data = rack_client.m_api.get_row(
                         table_name='rack',
-                        pk_source=delivery_items_client.s_data.inventoryLocation,
+                        pk_source=production_client.s_data.idinvlocation,  # Fixme
                     )
 
                     # 更新明细
@@ -158,11 +177,11 @@ def sync():
                         'production_sku': production_client.t_data.production_sku,
                         'warehouse_id': warehouse_client.m_data.pk_target,
                         'rack_id': rack_client.m_data.pk_target if rack_client.m_data else 0,
-                        'type_tax': TYPE_TAX_HAS if delivery_client.s_data.taxAmount > delivery_client.s_data.amount else TYPE_TAX_NOT,
+                        'type_tax': type_tax,
                         'quantity': delivery_items_client.s_data.quantity,
                         'unit_price': delivery_items_client.s_data.taxPrice,
-                        'create_time': time_local_to_utc(delivery_client.s_data.createdtime),  # 本地时间修改为UTC时间
-                        'update_time': time_local_to_utc(delivery_client.s_data.updated),  # 本地时间修改为UTC时间
+                        'create_time': create_time,  # 本地时间修改为UTC时间
+                        'update_time': update_time,  # 本地时间修改为UTC时间
                     }
                     # 删除条件 Fixme
                     # if delivery_client.s_data.disabled:
@@ -180,7 +199,9 @@ def sync():
                 #     continue
                 # ----------
                 # 创建目标数据
-                current_time = datetime.utcnow()
+                create_time = time_local_to_utc(delivery_client.s_data.createdtime)
+                update_time = time_local_to_utc(delivery_client.s_data.updated)
+                type_tax = TYPE_TAX_HAS if delivery_client.s_data.taxAmount > delivery_client.s_data.amount else TYPE_TAX_NOT
                 delivery_client.t_data = {
                     'uid': user_client.m_data.pk_target,
                     'customer_cid': customer_client.t_data.id,
@@ -191,14 +212,19 @@ def sync():
                     'amount_delivery': delivery_client.s_data.taxAmount,
                     'warehouse_id': warehouse_client.m_data.pk_target,
                     'note': delivery_client.s_data.memo,
-                    'type_tax': TYPE_TAX_HAS if delivery_client.s_data.taxAmount > delivery_client.s_data.amount else TYPE_TAX_NOT,
-                    'create_time': time_local_to_utc(delivery_client.s_data.createdtime),  # 本地时间修改为UTC时间
-                    'update_time': time_local_to_utc(delivery_client.s_data.updated),  # 本地时间修改为UTC时间
+                    'type_tax': type_tax,
+                    'create_time': create_time,  # 本地时间修改为UTC时间
+                    'update_time': update_time,  # 本地时间修改为UTC时间
                 }
                 # 删除条件
                 # if delivery_client.s_data.disabled:
                 #     delivery_client.t_data['status_delete'] = True
                 #     delivery_client.t_data['delete_time'] = current_time
+                # 审核条件
+                if auditor_client.t_id:
+                    delivery_client.t_data['status_audit'] = True
+                    delivery_client.t_data['audit_uid'] = auditor_client.t_id
+                    delivery_client.t_data['audit_time'] = update_time
                 # ----------
                 delivery_client.t_create()
                 delivery_client.m_create()
@@ -219,10 +245,13 @@ def sync():
                     production_client.t_data = production_client.t_api.get_row_by_id(production_client.m_data.pk_target)
                     if not production_client.t_data:
                         continue
-                    # 仓位
+                    production_client.s_data = production_client.s_api.get_row_by_id(production_client.m_data.pk_source)
+                    if not production_client.s_data:
+                        continue
+                    # 仓位（产品编号 > 产品详情 > 产品仓位）
                     rack_client.m_data = rack_client.m_api.get_row(
                         table_name='rack',
-                        pk_source=delivery_items_client.s_data.inventoryLocation,
+                        pk_source=production_client.s_data.idinvlocation,  # Fixme
                     )
 
                     # 插入明细
@@ -237,11 +266,11 @@ def sync():
                         'production_sku': production_client.t_data.production_sku,
                         'warehouse_id': warehouse_client.m_data.pk_target,
                         'rack_id': rack_client.m_data.pk_target if rack_client.m_data else 0,
-                        'type_tax': TYPE_TAX_HAS if delivery_client.s_data.taxAmount > delivery_client.s_data.amount else TYPE_TAX_NOT,
+                        'type_tax': type_tax,
                         'quantity': delivery_items_client.s_data.quantity,
                         'unit_price': delivery_items_client.s_data.taxPrice,
-                        'create_time': time_local_to_utc(delivery_client.s_data.createdtime),  # 本地时间修改为UTC时间
-                        'update_time': time_local_to_utc(delivery_client.s_data.updated),  # 本地时间修改为UTC时间
+                        'create_time': create_time,  # 本地时间修改为UTC时间
+                        'update_time': update_time,  # 本地时间修改为UTC时间
                     }
                     # 删除条件 Fixme
                     # if delivery_client.s_data.disabled:

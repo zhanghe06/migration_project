@@ -10,9 +10,8 @@
 
 from __future__ import unicode_literals
 
-from datetime import datetime
-
 from apps.models.db_migration import Contrast as MigrationContrast
+from apps.models.db_source.aa_inventory import AAInventory as SourceProduction
 from apps.models.db_source.eap_user import EAPUser as SourceUser
 from apps.models.db_source.pu_purchasearrival import PUPurchaseArrival as SourcePurchase
 from apps.models.db_source.pu_purchasearrival_b import PUPurchaseArrivalB as SourcePurchaseItems
@@ -35,11 +34,12 @@ def sync():
     purchase_items_client = MigrationClient('purchase_items', SourcePurchaseItems, TargetPurchaseItems,
                                             MigrationContrast)
     user_client = MigrationClient('user', SourceUser, TargetUser, MigrationContrast)
+    auditor_client = MigrationClient('user', None, None, MigrationContrast)
     supplier_client = MigrationClient('supplier', None, TargetSupplier, MigrationContrast)
     supplier_contact_client = MigrationClient('supplier_contact', None, TargetSupplierContact, MigrationContrast)
     warehouse_client = MigrationClient('warehouse', None, TargetWarehouse, MigrationContrast)
     rack_client = MigrationClient('rack', None, TargetRack, MigrationContrast)
-    production_client = MigrationClient('production', None, TargetProduction, MigrationContrast)
+    production_client = MigrationClient('production', SourceProduction, TargetProduction, MigrationContrast)
 
     while 1:
         s_rows = purchase_client.s_api.get_limit_rows_by_last_id(
@@ -61,6 +61,13 @@ def sync():
             )
             if not user_client.m_data:
                 continue
+
+            # 审核人员
+            auditor_client.m_data = user_client.m_api.get_row(
+                table_name='user',
+                pk_source=purchase_client.s_data.auditorid,
+            )
+            auditor_client.t_id = auditor_client.m_data.pk_target if auditor_client.m_data else 0
 
             # 供应商信息
             supplier_client.m_data = supplier_client.m_api.get_row(
@@ -97,7 +104,9 @@ def sync():
                 # ----------
                 # 更新目标数据
                 purchase_client.t_id = purchase_client.m_data.pk_target
-                current_time = datetime.utcnow()
+                create_time = time_local_to_utc(purchase_client.s_data.createdtime)
+                update_time = time_local_to_utc(purchase_client.s_data.updated)
+                type_tax = TYPE_TAX_HAS if purchase_client.s_data.totalTaxAmount > purchase_client.s_data.totalAmount else TYPE_TAX_NOT
                 purchase_client.t_data = {
                     'uid': user_client.m_data.pk_target,
                     'supplier_cid': supplier_client.t_data.id,
@@ -108,20 +117,27 @@ def sync():
                     'amount_purchase': purchase_client.s_data.totalTaxAmount,
                     'warehouse_id': warehouse_client.m_data.pk_target,
                     'note': purchase_client.s_data.memo,
-                    'type_tax': TYPE_TAX_HAS if purchase_client.s_data.totalTaxAmount > purchase_client.s_data.totalAmount else TYPE_TAX_NOT,
-                    'update_time': time_local_to_utc(purchase_client.s_data.updated),  # 本地时间修改为UTC时间
+                    'type_tax': type_tax,
+                    'update_time': update_time,  # 本地时间修改为UTC时间
                 }
                 # 删除条件
                 # if purchase_client.s_data.disabled:
                 #     purchase_client.t_data['status_delete'] = True
                 #     purchase_client.t_data['delete_time'] = current_time
+                # 审核条件
+                if auditor_client.t_id:
+                    purchase_client.t_data['status_audit'] = True
+                    purchase_client.t_data['audit_uid'] = auditor_client.t_id
+                    purchase_client.t_data['audit_time'] = update_time
                 # ----------
                 purchase_client.t_update()
                 purchase_client.m_update()
 
                 # 明细数据
                 # 清空历史
-                purchase_items_history_rows = purchase_items_client.t_api.get_rows()
+                purchase_items_history_rows = purchase_items_client.t_api.get_rows(
+                    purchase_id=purchase_client.t_id,
+                )
                 for purchase_items_history_data in purchase_items_history_rows:
                     purchase_items_client.t_api.delete(purchase_items_history_data.id)
                 # 全部更新
@@ -129,7 +145,7 @@ def sync():
                 for s_i_data in s_i_rows:
                     purchase_items_client.s_data = s_i_data
                     purchase_items_client.s_id = purchase_items_client.s_data.id
-                    purchase_items_client.latest_time = time_local_to_utc(purchase_client.s_data.updated)
+                    purchase_items_client.latest_time = update_time
                     # 产品
                     production_client.m_data = production_client.m_api.get_row(
                         table_name='production',
@@ -140,10 +156,13 @@ def sync():
                     production_client.t_data = production_client.t_api.get_row_by_id(production_client.m_data.pk_target)
                     if not production_client.t_data:
                         continue
-                    # 仓位
+                    production_client.s_data = production_client.s_api.get_row_by_id(production_client.m_data.pk_source)
+                    if not production_client.s_data:
+                        continue
+                    # 仓位（产品编号 > 产品详情 > 产品仓位）
                     rack_client.m_data = rack_client.m_api.get_row(
                         table_name='rack',
-                        pk_source=purchase_items_client.s_data.inventoryLocation,
+                        pk_source=production_client.s_data.idinvlocation,  # Fixme
                     )
 
                     # 更新明细
@@ -158,11 +177,11 @@ def sync():
                         'production_sku': production_client.t_data.production_sku,
                         'warehouse_id': warehouse_client.m_data.pk_target,
                         'rack_id': rack_client.m_data.pk_target if rack_client.m_data else 0,
-                        'type_tax': TYPE_TAX_HAS if purchase_client.s_data.totalTaxAmount > purchase_client.s_data.totalAmount else TYPE_TAX_NOT,
+                        'type_tax': type_tax,
                         'quantity': purchase_items_client.s_data.quantity,
                         'unit_price': purchase_items_client.s_data.taxPrice,
-                        'create_time': time_local_to_utc(purchase_client.s_data.createdtime),  # 本地时间修改为UTC时间
-                        'update_time': time_local_to_utc(purchase_client.s_data.updated),  # 本地时间修改为UTC时间
+                        'create_time': create_time,  # 本地时间修改为UTC时间
+                        'update_time': update_time,  # 本地时间修改为UTC时间
                     }
                     # 删除条件 Fixme
                     # if purchase_client.s_data.disabled:
@@ -180,7 +199,9 @@ def sync():
                 #     continue
                 # ----------
                 # 创建目标数据
-                current_time = datetime.utcnow()
+                create_time = time_local_to_utc(purchase_client.s_data.createdtime)
+                update_time = time_local_to_utc(purchase_client.s_data.updated)
+                type_tax = TYPE_TAX_HAS if purchase_client.s_data.totalTaxAmount > purchase_client.s_data.totalAmount else TYPE_TAX_NOT
                 purchase_client.t_data = {
                     'uid': user_client.m_data.pk_target,
                     'supplier_cid': supplier_client.t_data.id,
@@ -191,14 +212,19 @@ def sync():
                     'amount_purchase': purchase_client.s_data.totalTaxAmount,
                     'warehouse_id': warehouse_client.m_data.pk_target,
                     'note': purchase_client.s_data.memo,
-                    'type_tax': TYPE_TAX_HAS if purchase_client.s_data.totalTaxAmount > purchase_client.s_data.totalAmount else TYPE_TAX_NOT,
-                    'create_time': time_local_to_utc(purchase_client.s_data.createdtime),  # 本地时间修改为UTC时间
-                    'update_time': time_local_to_utc(purchase_client.s_data.updated),  # 本地时间修改为UTC时间
+                    'type_tax': type_tax,
+                    'create_time': create_time,  # 本地时间修改为UTC时间
+                    'update_time': update_time,  # 本地时间修改为UTC时间
                 }
                 # 删除条件
                 # if purchase_client.s_data.disabled:
                 #     purchase_client.t_data['status_delete'] = True
                 #     purchase_client.t_data['delete_time'] = current_time
+                # 审核条件
+                if auditor_client.t_id:
+                    purchase_client.t_data['status_audit'] = True
+                    purchase_client.t_data['audit_uid'] = auditor_client.t_id
+                    purchase_client.t_data['audit_time'] = update_time
                 # ----------
                 purchase_client.t_create()
                 purchase_client.m_create()
@@ -219,10 +245,13 @@ def sync():
                     production_client.t_data = production_client.t_api.get_row_by_id(production_client.m_data.pk_target)
                     if not production_client.t_data:
                         continue
-                    # 仓位
+                    production_client.s_data = production_client.s_api.get_row_by_id(production_client.m_data.pk_source)
+                    if not production_client.s_data:
+                        continue
+                    # 仓位（产品编号 > 产品详情 > 产品仓位）
                     rack_client.m_data = rack_client.m_api.get_row(
                         table_name='rack',
-                        pk_source=purchase_items_client.s_data.inventoryLocation,
+                        pk_source=production_client.s_data.idinvlocation,  # Fixme
                     )
 
                     # 插入明细
@@ -237,11 +266,11 @@ def sync():
                         'production_sku': production_client.t_data.production_sku,
                         'warehouse_id': warehouse_client.m_data.pk_target,
                         'rack_id': rack_client.m_data.pk_target if rack_client.m_data else 0,
-                        'type_tax': TYPE_TAX_HAS if purchase_client.s_data.totalTaxAmount > purchase_client.s_data.totalAmount else TYPE_TAX_NOT,
+                        'type_tax': type_tax,
                         'quantity': purchase_items_client.s_data.quantity,
                         'unit_price': purchase_items_client.s_data.taxPrice,
-                        'create_time': time_local_to_utc(purchase_client.s_data.createdtime),  # 本地时间修改为UTC时间
-                        'update_time': time_local_to_utc(purchase_client.s_data.updated),  # 本地时间修改为UTC时间
+                        'create_time': create_time,  # 本地时间修改为UTC时间
+                        'update_time': update_time,  # 本地时间修改为UTC时间
                     }
                     # 删除条件 Fixme
                     # if purchase_client.s_data.disabled:

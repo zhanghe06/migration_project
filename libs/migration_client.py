@@ -33,9 +33,12 @@ class MigrationClient(object):
 
     def __init__(self, table_name, s_model=None, t_model=None, m_model=None):
         self.table_name = table_name
-        self.s_api = DbApi(get_source_db(), s_model)
-        self.t_api = DbApi(get_target_db(), t_model)
-        self.m_api = DbApi(get_migration_db(), m_model)
+        if s_model:
+            self.s_api = DbApi(get_source_db(), s_model)
+        if t_model:
+            self.t_api = DbApi(get_target_db(), t_model)
+        if m_model:
+            self.m_api = DbApi(get_migration_db(), m_model)
 
     def t_create(self):
         self.t_id = self.t_api.add(self.t_data)
