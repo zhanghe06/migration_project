@@ -69,6 +69,7 @@ def sync():
                 # ----------
                 # 更新目标数据
                 supplier_client.t_id = supplier_client.m_data.pk_target
+                current_time = datetime.utcnow()
                 # 提取基本数据
                 company_name = supplier_client.s_data.name.strip() if supplier_client.s_data.name else ''
                 company_address = supplier_client.s_data.ShipmentAddress.strip() if supplier_client.s_data.ShipmentAddress else ''
